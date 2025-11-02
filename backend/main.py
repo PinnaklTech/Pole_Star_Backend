@@ -8,6 +8,9 @@ from routers import auth, projects, calculations
 # Import database
 from database import connect_to_mongo, close_mongo_connection
 
+# Import settings
+from config import settings
+
 # Application lifespan
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -27,18 +30,14 @@ app = FastAPI(
 )
 
 # CORS middleware
+# CORS origins are configured via ALLOWED_ORIGINS environment variable
+# Format: comma-separated list (e.g., "http://localhost:8080,https://app.netlify.app")
+# Default includes common development ports
+cors_origins = settings.get_cors_origins()
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:5173",  # Vite default
-        "http://localhost:3000",   # React default
-        "http://localhost:8080",   # Alternative port
-        "http://127.0.0.1:5173",
-        "http://127.0.0.1:3000",
-        "http://127.0.0.1:8080",
-        "http://192.168.0.7:8080",
-        "http://192.168.0.2:8080/",
-    ],
+    allow_origins=cors_origins if "*" not in cors_origins else ["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -58,6 +57,15 @@ async def root():
 @app.get("/health")
 async def health_check():
     return {"status": "healthy"}
+
+@app.get("/debug/cors")
+async def debug_cors():
+    """Debug endpoint to check CORS configuration (remove in production)"""
+    return {
+        "allowed_origins": cors_origins,
+        "allowed_origins_raw": settings.allowed_origins,
+        "app_url": settings.app_url
+    }
 
 if __name__ == "__main__":
     import uvicorn

@@ -1,5 +1,5 @@
 from pydantic_settings import BaseSettings
-from typing import Optional
+from typing import List
 
 class Settings(BaseSettings):
     # MongoDB Configuration
@@ -23,9 +23,20 @@ class Settings(BaseSettings):
     api_host: str = "0.0.0.0"
     api_port: int = 8000
     
+    # CORS Configuration
+    # Comma-separated list of allowed origins (e.g., "https://app.netlify.app,https://app2.netlify.app")
+    # Or set ALLOWED_ORIGINS="*" to allow all origins (not recommended for production)
+    allowed_origins: str = "http://localhost:5173,http://localhost:3000,http://localhost:8080,http://127.0.0.1:5173,http://127.0.0.1:3000,http://127.0.0.1:8080"
+    
     class Config:
         env_file = ".env"
         case_sensitive = False
         extra = "allow"
+    
+    def get_cors_origins(self) -> List[str]:
+        """Parse allowed_origins string into a list."""
+        if self.allowed_origins == "*":
+            return ["*"]
+        return [origin.strip() for origin in self.allowed_origins.split(",") if origin.strip()]
 
 settings = Settings()
